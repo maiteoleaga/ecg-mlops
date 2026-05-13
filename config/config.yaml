@@ -1,0 +1,36 @@
+# Reproducibilidad
+seed: 42
+
+# Dataset
+data:
+  train_csv: "data/raw/mitbih_train.csv"
+  test_csv: "data/raw/mitbih_test.csv"
+  n_classes: 5
+  sequence_length: 187
+  val_size: 0.15
+  class_names:
+    0: "N (Normal)"
+    1: "S (Supraventricular)"
+    2: "V (Ventricular)"
+    3: "F (Fusión)"
+    4: "Q (Desconocido)"
+
+# Modelo InceptionTime
+model:
+  name: "InceptionTime"
+  n_filters: 32
+  kernel_sizes: [10, 20, 40]
+  bottleneck_channels: 32
+  n_inception_blocks: 6
+
+# Entrenamiento
+training:
+  batch_size: 256
+  n_epochs: 20
+  learning_rate: 0.001
+  use_class_weights: false
+
+# Weights & Biases
+wandb:
+  project: "ecg-mlops"
+  entity: null   # null usa tu usuario por defecto
