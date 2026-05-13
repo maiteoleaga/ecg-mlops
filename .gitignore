@@ -1,0 +1,44 @@
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# === Entornos virtuales ===
+venv/
+.venv/
+env/
+ENV/
+
+# === Configuración del IDE ===
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# === Jupyter ===
+.ipynb_checkpoints/
+
+# === Datos y modelos (NO se suben al repo) ===
+data/
+models/
+*.pt
+*.pth
+*.pkl
+
+# === W&B (logs locales) ===
+wandb/
+
+# === Variables de entorno (credenciales) ===
+.env
+*.env
+
+# === Logs ===
+*.log
+
+# === Caches ===
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
