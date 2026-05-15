@@ -40,11 +40,19 @@ def set_seed(seed: int) -> None:
 
 
 def get_device() -> torch.device:
-    """Devuelve cuda si está disponible o cpu."""
+    """Devuelve cuda si está disponible, mps en Apple Silicon, o cpu.
+
+    Si quieres forzar CPU (útil en macOS antiguos sin soporte MPS),
+    define la variable de entorno FORCE_CPU=1 antes de ejecutar.
+    """
+    import os
+    if os.environ.get("FORCE_CPU") == "1":
+        return torch.device("cpu")
     if torch.cuda.is_available():
         return torch.device("cuda")
+    if torch.backends.mps.is_available():
+        return torch.device("mps")
     return torch.device("cpu")
-
 
 def load_data(relative_path: str) -> pd.DataFrame:
     """Carga un CSV desde una ruta relativa a la raíz del proyecto."""
