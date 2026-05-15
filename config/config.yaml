@@ -33,4 +33,4 @@ training:
 # Weights & Biases
 wandb:
   project: "ecg-mlops"
-  entity: null   # null usa tu usuario por defecto
+  entity: "oleagamaite-no"

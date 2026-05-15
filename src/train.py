@@ -2,6 +2,9 @@
 import logging
 from pathlib import Path
 
+import argparse
+import wandb
+
 import torch
 from torch.utils.data import DataLoader
 
@@ -26,6 +29,23 @@ def setup_logging() -> None:
         datefmt="%H:%M:%S",
     )
 
+def init_wandb(cfg: dict, run_name: str | None = None):
+    """Inicializa un run de W&B con los hiperparámetros del cfg."""
+    wandb_cfg = cfg["wandb"]
+    return wandb.init(
+        project=wandb_cfg["project"],
+        entity=wandb_cfg["entity"],
+        name=run_name,
+        config={
+            "seed": cfg["seed"],
+            "model": cfg["model"],
+            "training": cfg["training"],
+            "data": {
+                "n_classes": cfg["data"]["n_classes"],
+                "val_size": cfg["data"]["val_size"],
+            },
+        },
+    )
 
 def train_one_epoch(model: torch.nn.Module, train_dl: DataLoader, optimizer: torch.optim.Optimizer, loss_fn: torch.nn.Module, device: torch.device) -> float:
     """Entrena el modelo una época y devuelve la pérdida media."""
@@ -60,12 +80,14 @@ def validate_one_epoch(model: torch.nn.Module, val_dl: DataLoader, loss_fn: torc
         n_batches += 1
     return total_loss / n_batches
 
-
-def train_one_run(cfg: dict) -> dict:
+def train_one_run(cfg: dict, use_wandb: bool = False, run_name: str | None = None) -> dict:
     """Ejecuta un entrenamiento completo y devuelve métricas finales."""
     set_seed(cfg["seed"])
     device = get_device()
     logger.info(f"Device: {device}")
+
+    # === W&B ===
+    run = init_wandb(cfg, run_name=run_name) if use_wandb else None
 
     # === Datos ===
     X_train, y_train = load_train(cfg["data"]["train_csv"])
@@ -85,6 +107,8 @@ def train_one_run(cfg: dict) -> dict:
     model = build_model_from_config(cfg).to(device)
     n_params = sum(p.numel() for p in model.parameters())
     logger.info(f"Modelo: {type(model).__name__} con {n_params:,} parámetros")
+    if run is not None:
+        wandb.log({"n_params": n_params})
 
     # === Optimizador, pérdida y scheduler ===
     lr = cfg["training"]["learning_rate"]
@@ -104,6 +128,8 @@ def train_one_run(cfg: dict) -> dict:
         logger.info(
             f"Epoch {epoch}/{n_epochs} | train_loss={train_loss:.4f} | val_loss={val_loss:.4f}"
         )
+        if run is not None:
+            wandb.log({"epoch": epoch, "train_loss": train_loss, "val_loss": val_loss})
 
     # === Evaluación en validación ===
     logger.info("Evaluando en validación...")
@@ -117,6 +143,12 @@ def train_one_run(cfg: dict) -> dict:
     test_metrics = compute_metrics(y_true_t, y_pred_t, y_proba_t)
     log_metrics(test_metrics, prefix="test")
 
+    if run is not None:
+        wandb.log({
+            **{f"val/{k}": v for k, v in val_metrics.items() if k != "f1_per_class"},
+            **{f"test/{k}": v for k, v in test_metrics.items() if k != "f1_per_class"},
+        })
+
     # === Guardar modelo ===
     root = get_project_root()
     model_dir = root / "models"
@@ -127,23 +159,39 @@ def train_one_run(cfg: dict) -> dict:
 
     # === Matriz de confusión ===
     class_names = [cfg["data"]["class_names"][i] for i in range(cfg["data"]["n_classes"])]
-    cm_path = root / "models" / "confusion_matrix_test.png"
+    cm_path = model_dir / "confusion_matrix_test.png"
     plot_confusion_matrix(
         y_true_t, y_pred_t, class_names=class_names,
         output_path=cm_path, normalize=True, title="Confusion matrix (test)",
     )
+
+    # === Subir modelo y matriz como artifact a W&B ===
+    if run is not None:
+        artifact = wandb.Artifact(
+            name="inception_time",
+            type="model",
+            description=f"InceptionTime trained on MIT-BIH (F1-macro test={test_metrics['f1_macro']:.4f})",
+        )
+        artifact.add_file(str(model_path))
+        artifact.add_file(str(cm_path))
+        run.log_artifact(artifact)
+        wandb.finish()
 
     return {"val": val_metrics, "test": test_metrics}
 
 
 def main() -> None:
     setup_logging()
+    parser = argparse.ArgumentParser(description="Entrena InceptionTime sobre MIT-BIH")
+    parser.add_argument("--wandb", action="store_true", help="Activar tracking en W&B")
+    parser.add_argument("--name", type=str, default=None, help="Nombre del run en W&B")
+    args = parser.parse_args()
+
     cfg = load_config()
     logger.info("=== Empieza el entrenamiento ===")
-    results = train_one_run(cfg)
+    results = train_one_run(cfg, use_wandb=args.wandb, run_name=args.name)
     logger.info("=== Entrenamiento finalizado ===")
     logger.info(f"F1-macro test: {results['test']['f1_macro']:.4f}")
-
 
 if __name__ == "__main__":
     main()
