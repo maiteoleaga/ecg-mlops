@@ -17,7 +17,7 @@ def cfg():
     """Fixture que carga la configuración una sola vez por módulo."""
     return load_config()
 
-
+@pytest.mark.requires_data
 def test_load_train(cfg):
     """El train CSV se carga y tiene la forma esperada."""
     X, y = load_train(cfg["data"]["train_csv"])
@@ -27,14 +27,14 @@ def test_load_train(cfg):
     assert X.shape[0] == y.shape[0]
     assert set(np.unique(y)).issubset(set(range(cfg["data"]["n_classes"])))
 
-
+@pytest.mark.requires_data
 def test_load_test(cfg):
     """El test CSV se carga correctamente."""
     X, y = load_test(cfg["data"]["test_csv"])
     assert X.shape[0] > 0
     assert X.shape[1] == cfg["data"]["sequence_length"]
 
-
+@pytest.mark.requires_data
 def test_make_validation_split(cfg):
     """El split estratificado mantiene proporciones."""
     X, y = load_train(cfg["data"]["train_csv"])
@@ -44,7 +44,7 @@ def test_make_validation_split(cfg):
     assert X_tr.shape[0] + X_val.shape[0] == X.shape[0]
     assert abs(X_val.shape[0] / X.shape[0] - cfg["data"]["val_size"]) < 0.01
 
-
+@pytest.mark.requires_data
 def test_compute_class_weights(cfg):
     """Los pesos de clase son positivos y tienen tamaño n_classes."""
     X, y = load_train(cfg["data"]["train_csv"])
@@ -52,7 +52,7 @@ def test_compute_class_weights(cfg):
     assert weights.shape == (cfg["data"]["n_classes"],)
     assert (weights > 0).all()
 
-
+@pytest.mark.requires_data
 def test_build_dataloaders(cfg):
     """Los DataLoaders devuelven batches con la forma correcta."""
     X, y = load_train(cfg["data"]["train_csv"])
