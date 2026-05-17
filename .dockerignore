@@ -1,0 +1,39 @@
+# Entorno virtual y cachés de Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Datos y modelos no entran al contenedor (se descargan en runtime)
+data/
+# models/ # de momento dejo cargo el modelo en el contenedor
+
+# Git y archivos sensibles
+.git/
+.gitignore
+.gitattributes
+.env
+*.env
+
+# Notebooks (no se sirven en producción)
+notebooks/
+
+# Logs locales de W&B
+wandb/
+
+# Tests y CI (no se ejecutan en producción)
+tests/
+.pytest_cache/
+
+# IDE y SO
+.vscode/
+.idea/
+.DS_Store
+
+# Archivos del proyecto que no son código
+README.md
+*.md
+
+
+# El otro requirements (Docker usa el de la API)
+requirements.txt

@@ -1,0 +1,11 @@
+# Dependencias mínimas para producción (Docker / API)
+# NO incluye: fastai, jupyter, matplotlib, seaborn, wandb, pytest
+
+fastapi==0.136.1
+uvicorn[standard]==0.46.0
+pydantic==2.13.4
+pandas==2.3.3
+torch==2.2.2
+numpy==1.26.4
+PyYAML==6.0.3
+scikit-learn==1.8.0
