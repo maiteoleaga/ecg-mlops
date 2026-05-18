@@ -20,10 +20,10 @@ ENV/
 # === Jupyter ===
 .ipynb_checkpoints/
 
-# === Datos y modelos (NO se suben al repo) ===
+# === Datos(NO se suben al repo) ===
 data/
-models/
-# Ignorar models/ excepto el modelo principal
+
+# === Modelos (solo subimos el modelo final) ===
 models/*
 !models/inception_time.pt
 !models/.gitkeep
