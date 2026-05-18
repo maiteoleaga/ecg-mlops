@@ -21,7 +21,7 @@ def sample_signal():
     df = pd.read_csv(csv_path, header=None)
     return df.iloc[0, :-1].tolist()
 
-
+@pytest.mark.requires_model
 def test_root(client):
     """GET / responde 200 con la info de la API."""
     response = client.get("/")
@@ -30,7 +30,7 @@ def test_root(client):
     assert "name" in data
     assert "endpoints" in data
 
-
+@pytest.mark.requires_model
 def test_health(client):
     """GET /health devuelve status ok y modelo cargado."""
     response = client.get("/health")
@@ -39,7 +39,7 @@ def test_health(client):
     assert data["status"] == "ok"
     assert data["model_loaded"] is True
 
-
+@pytest.mark.requires_model
 def test_predict_ok(client, sample_signal):
     """POST /predict con una señal válida devuelve una predicción coherente."""
     response = client.post("/predict", json={"signal": sample_signal})
@@ -54,14 +54,14 @@ def test_predict_ok(client, sample_signal):
     total = sum(data["probabilities"].values())
     assert abs(total - 1.0) < 1e-4
 
-
+@pytest.mark.requires_model
 def test_predict_invalid_length(client):
     """POST /predict con señal de longitud incorrecta devuelve 422."""
     bad_signal = [0.0] * 100  # debe ser 187
     response = client.post("/predict", json={"signal": bad_signal})
     assert response.status_code == 422
 
-
+@pytest.mark.requires_model
 def test_predict_missing_field(client):
     """POST /predict sin el campo 'signal' devuelve 422."""
     response = client.post("/predict", json={})
