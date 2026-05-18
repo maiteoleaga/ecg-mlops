@@ -36,7 +36,7 @@ RUN pip install --upgrade pip && \
 COPY src/ ./src/
 COPY api/ ./api/
 COPY config/ ./config/
-COPY models/inception_time.pt ./models/inception_time.pt
+COPY models/ ./models/
 
 # ──────────────────────────────────────────────────────────────────────
 # Exponer el puerto y arrancar uvicorn
