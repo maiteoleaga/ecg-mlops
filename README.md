@@ -199,14 +199,13 @@ docker run -d --name ecg-api -p 8000:8000 ecg-mlops:latest
 La API queda accesible en `http://localhost:8000`.
 
 ## CI/CD
-El proyecto cuenta con un pipeline completo de Integración Continua y Despliegue Continuo.
+El proyecto cuenta con un pipeline de Integración Continua (CI) y Despliegue Continuo (CD). Ambos procesos son independientes y, aunque el CI puede existir sin CD, desplegar de forma automática sin haber validado antes los cambios no es una práctica recomendable; por eso aquí van encadenados.
 
 ### Integración Continua (CI)
-Se ha utilizado GitHub Actions para hace la integración de la API. El workflow para hacer la integración está detallado en `.github/workflows/CI.yaml`. Cada vez que se hace `push` al `main`en github se activa el workflow que validan los tests  y que el Dockerfile se construye correctamente.
+El proyecto utiliza GitHub Actions como herramienta de CI. El workflow está definido en `.github/workflows/CI.yaml` y se ejecuta automáticamente con cada `push` a la rama `main`. En él se validan los tests y se comprueba que la imagen Docker se construye correctamente.
 
 ### Despliegue Continuo (CD)
-
-El despliegue continuo está detallado en la sección del endpoint de la API. 
+Cada cambio aceptado en `main` se despliega automáticamente en producción. Los detalles del servicio desplegado y la URL pública se encuentran en la sección [API y uso](#api-y-uso).
 
 ## Enlaces
 
