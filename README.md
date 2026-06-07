@@ -106,9 +106,9 @@ Métricas en test:
 
 | Métrica | Valor |
 |---------|------:|
-| Accuracy | 0.98 |
-| F1-weighted | 0.98 |
-| F1-macro | 0.88 |
+| Accuracy | 0.99 |
+| F1-weighted | 0.99 |
+| F1-macro | 0.82 |
 
 ## API y uso
 
@@ -209,10 +209,10 @@ Cada cambio aceptado en `main` se despliega automáticamente en producción. Los
 
 ## Enlaces
 
-[Repositorio GitHub](https://github.com/maiteoleaga/ecg-mlops)
-[Proyecto en W&B](https://wandb.ai/maiteol/ecg-mlops)
-[Endpoint en producción](https://ecg-mlops.onrender.com)
-[Endpoint en producción con Swagger UI](https://ecg-mlops.onrender.com/docs)
+- [Repositorio GitHub](https://github.com/maiteoleaga/ecg-mlops)
+- [Report en W&B](https://wandb.ai/maiteol/ecg-mlops/reports/ECG-Heartbeat-Classification-Comparativa-de-Learning-Rate--VmlldzoxNzE0OTMyOA?accessToken=8ycjgc7yzu691of5mb9su7yio00yhenvednmr5bk1nsvrm76o5zn0orvphk2t8el)
+- [Endpoint en producción](https://ecg-mlops.onrender.com)
+- [Swagger UI del endpoint](https://ecg-mlops.onrender.com/docs)
 
 
 
