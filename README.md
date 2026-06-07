@@ -24,17 +24,6 @@ Clasificar latidos cardíacos individuales (series temporales de 187 puntos) en 
 
 El dataset presenta un fuerte desbalance: la clase N representa ~83 % de las muestras. El proyecto utiliza F1-macro como métrica principal en lugar de accuracy.
 
-## Modelo
-
-**InceptionTime 1D** (sin class weights), arquitectura compuesta por 6 módulos Inception con convoluciones paralelas de múltiples tamaños de kernel + Global Average Pooling + capa lineal final. Entrenada con **fastai** sobre **PyTorch**.
-
-Métricas en test:
-
-| Métrica | Valor |
-|---------|------:|
-| Accuracy | 0.98 |
-| F1-weighted | 0.98 |
-| F1-macro | 0.94 |
 
 ## Estructura del proyecto
 
@@ -43,16 +32,15 @@ ecg-mlops/
 ├── .gitignore
 ├── README.md
 ├── requirements.txt
-├── data/                # ignorado por git — descargar con scripts/download_data.py
+├── data/                # ignorado por git
 │   ├── raw/
 │   └── processed/
-├── models/              # ignorado por git — descargar desde W&B
+├── models/              
 ├── notebooks/
 │   └── main.ipynb       # notebook original con el EDA y experimentos
 ├── src/                 # código de entrenamiento
 ├── api/                 # servicio FastAPI
-├── tests/               # tests pytest
-└── scripts/             # utilidades (descarga de datos, etc.)
+└──tests/               # tests pytest
 ```
 
 ## Requisitos
@@ -99,18 +87,134 @@ data/raw/
 
 > Los archivos de datos **no se incluyen en el repositorio** (`data/` está en `.gitignore`). Cada usuario debe descargarlos por su cuenta siguiendo los pasos anteriores.
 
+## Entrenamiento del modelo 
+El entrenamiento se ejecuta con W&B activado para trackear métricas, hiperparámetros y artifacts del modelo. El entrenamiento final se ha realizado en Google Colab con GPU T4. El notebook `notebooks/train_colab.ipynb` clona el repositorio, lanza el entrenamiento y sube el modelo a Weights & Biases. Una vez completado, el modelo se descarga desde W&B a `models/inception_time.pt` para servirlo localmente. 
+
+Para ejecutar el entrenamiento se usa el comando: 
+
+```bash
+python -m src.train --wandb --name nombre-del-run
+```
+### Hiperparámetros
+Los parámetros se pueden editar en el archivo `config/config.yaml`, esto permite no modifcar los scripts y hacer diferentes experimentos con el mismo modelo. 
+
+### Resultados obtenidos
+
+**InceptionTime 1D** (sin class weights), arquitectura compuesta por 6 módulos Inception con convoluciones paralelas de múltiples tamaños de kernel + Global Average Pooling + capa lineal final. Entrenada con  **PyTorch**.
+
+Métricas en test:
+
+| Métrica | Valor |
+|---------|------:|
+| Accuracy | 0.98 |
+| F1-weighted | 0.98 |
+| F1-macro | 0.88 |
+
+## API y uso
+
+Con la API se puede probar el modelo entrenado. 
+
+### Arrancar la API en local
+
+```bash
+uvicorn api.main:app --reload --port 8000
+```
+
+Se accede en `http://localhost:8000`.
+
+### Endpoint principal: `POST /predict`
+
+Recibe una señal de **187 puntos** y devuelve la clase predicha junto con las probabilidades por clase.
+
+**Ejemplo de body:**
+
+```json
+{
+  "signal": [1.0, 0.821, 0.221, 0.091, ..., 0.0, 0.0]
+}
+```
+
+> El array `signal` debe contener exactamente 187 valores numéricos.
+
+### Probar la API
+
+La forma más sencilla de probar la API es a través de Swagger UI, accesible en /docs. Desde ahí puedes desplegar POST /predict, pulsar "Try it out" y enviar una señal de ejemplo directamente desde el navegador.
+
+
+### Endpoint en producción
+
+El endpoint está desplegado en Render.com en su versión gratuita. 
+
+[https://ecg-mlops.onrender.com/docs](https://ecg-mlops.onrender.com/docs)
+
+> ⚠️ Nota sobre Render Free: el servicio se duerme tras 15 min sin uso. La primera petición tras un periodo de inactividad puede tardar 30-60 segundos mientras Render reactiva el contenedor. Las siguientes peticiones serán rápidas.
+
+## Tests
+
+El proyecto incluye 14 test con pytest, organizados en 3 archivos: 
+
+| Archivo | Qué verifica |
+|---|---|
+|`test_data.py`| Carga de CSVs, shapes, splits, dataloaders |
+|`test_model.py`| Forward del modelo, parámetros, softmax |
+|`test_api.py`| Endpoints, validaciones de Pydantic |
+
+### Ejecutar todos los tests en local
+Todos (necesita CSVs en data/raw/ y modelo en models/)
+```bash
+pytest -v
+```
+
+### Ejecutar solo los tests sin dependencias externas (modo CI)
+Solo los que no requieren datos ni modelo (los que corre el CI)
+```bash
+pytest -v -m "not requires_data and not requires_model"
+```
+
+El CI ejecuta únicamente los tests que no requieren datos ni modelo, ya que los CSVs (data/) están excluidos del repositorio y el modelo se versiona aparte. Esta separación se gestiona mediante los marcadores `@pytest.mark.requires_data` y `@pytest.mark.requires_model` definidos en pytest.ini.
+
+## Docker
+
+La API se distribuye como una imagen Docker autocontenida que incluye Python, las dependencias y el modelo entrenado, lo que garantiza un despliegue reproducible en cualquier entorno.
+
+### Estructura de la imagen
+
+- **Imagen base**: `python:3.12-slim` (versión fijada y ligera).
+- **Dependencias**: el proyecto incluye dos archivos de requirements. `requirements.txt` para desarrollo (con jupyter, wandb, pytest...) y `requirements-api.txt` con solo las librerías esenciales para servir la API. Este último es el que utiliza el Dockerfile, lo que reduce significativamente el tamaño de la imagen.
+- **`.dockerignore`**: excluye del build todos los archivos que no se deben copiar al contenedor (`data/`, `notebooks/`, `tests/`, `.venv/`, etc.).
+- **Modelo embebido**: el modelo entrenado (`models/inception_time.pt`) se incluye dentro de la imagen para que el contenedor sea autocontenido. La alternativa sería descargarlo desde W&B en runtime, lo cual exigiría exponer la API key de W&B en el contenedor.
+
+### Construir la imagen
+
+```bash
+docker build -t ecg-mlops:latest .
+```
+
+### Arrancar el contenedor
+
+```bash
+docker run -d --name ecg-api -p 8000:8000 ecg-mlops:latest
+```
+
+La API queda accesible en `http://localhost:8000`.
+
+## CI/CD
+El proyecto cuenta con un pipeline completo de Integración Continua y Despliegue Continuo.
+
+### Integración Continua (CI)
+Se ha utilizado GitHub Actions para hace la integración de la API. El workflow para hacer la integración está detallado en `.github/workflows/CI.yaml`. Cada vez que se hace `push` al `main`en github se activa el workflow que validan los tests  y que el Dockerfile se construye correctamente.
+
+### Despliegue Continuo (CD)
+
+El despliegue continuo está detallado en la sección del endpoint de la API. 
 
 ## Enlaces
 
-- **Repositorio GitHub:** *pendiente*
-- **Proyecto en Weights & Biases:** *pendiente*
-- **Endpoint en producción:** *pendiente*
+[Repositorio GitHub](https://github.com/maiteoleaga/ecg-mlops)
+[Proyecto en W&B](https://wandb.ai/oleagamaite-no/ecg-mlops)
+[Endpoint en producción](https://ecg-mlops.onrender.com)
+[Endpoint en producción con Swagger UI](https://ecg-mlops.onrender.com/docs)
 
-Estructura final esperada:
-```
-data/raw/
-├── mitbih_train.csv   (~86 MB)
-└── mitbih_test.csv    (~21 MB)
-```
 
-> Los archivos de datos **no se incluyen en el repositorio** (`data/` está en `.gitignore`). Cada usuario debe descargarlos por su cuenta siguiendo los pasos anteriores.
+
+
