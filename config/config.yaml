@@ -33,4 +33,4 @@ training:
 # Weights & Biases
 wandb:
   project: "ecg-mlops"
-  entity: "oleagamaite-no"
+  entity: "maiteol"

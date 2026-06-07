@@ -210,7 +210,7 @@ Cada cambio aceptado en `main` se despliega automáticamente en producción. Los
 ## Enlaces
 
 [Repositorio GitHub](https://github.com/maiteoleaga/ecg-mlops)
-[Proyecto en W&B](https://wandb.ai/oleagamaite-no/ecg-mlops)
+[Proyecto en W&B](https://wandb.ai/maiteol/ecg-mlops)
 [Endpoint en producción](https://ecg-mlops.onrender.com)
 [Endpoint en producción con Swagger UI](https://ecg-mlops.onrender.com/docs)
 
