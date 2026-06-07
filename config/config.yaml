@@ -27,7 +27,7 @@ model:
 training:
   batch_size: 256
   n_epochs: 20
-  learning_rate: 0.001
+  learning_rate: 0.01
   use_class_weights: false
 
 # Weights & Biases
