@@ -29,18 +29,18 @@ El dataset presenta un fuerte desbalance: la clase N representa ~83 % de las mue
 
 ```
 ecg-mlops/
-├── .gitignore
-├── README.md
-├── requirements.txt
-├── data/                # ignorado por git
-│   ├── raw/
-│   └── processed/
-├── models/              
-├── notebooks/
-│   └── main.ipynb       # notebook original con el EDA y experimentos
-├── src/                 # código de entrenamiento
-├── api/                 # servicio FastAPI
-└──tests/               # tests pytest
+├── .github/workflows/     # GitHub Actions (CI)
+├── api/                   # Servicio FastAPI
+├── config/                # config.yaml (hiperparámetros, W&B)
+├── data/                  # Datos (ignorado por git)
+├── models/                # Modelo entrenado
+├── notebooks/             # EDA y entrenamiento en Colab
+├── src/                   # Código modular (data, model, train, evaluate)
+├── tests/                 # Tests con pytest
+├── Dockerfile
+├── pytest.ini
+├── requirements.txt       # Dependencias de desarrollo
+└── requirements-api.txt   # Dependencias mínimas para la API
 ```
 
 ## Requisitos
